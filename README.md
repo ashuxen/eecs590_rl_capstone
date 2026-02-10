@@ -102,7 +102,7 @@ A discrete MDP where a drone navigates through a windy chasm:
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/eecs590_rl_capstone.git
+git clone https://github.com/ashuxen/eecs590_rl_capstone.git
 cd eecs590_rl_capstone
 
 # Create virtual environment
@@ -312,6 +312,14 @@ trainer.load("models/policy_kernel/best_v1.pkl")
 ## License
 
 MIT License - See [LICENSE](LICENSE) file.
+
+---
+
+## Contact
+
+**Ashutosh Kumar**  
+Email: ashutosh.kumar@und.edu  
+GitHub: [@ashuxen](https://github.com/ashuxen)
 
 ---
 
