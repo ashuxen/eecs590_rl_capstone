@@ -297,6 +297,9 @@ trainer.load("models/policy_kernel/best_v1.pkl")
 - EECS 590 Lecture Slides (Dr. Alexander Lowenstein)
 - Mini 1 & Mini 2 Assignment Specifications
 
+##LLM/AI help
+- [Chatgpt] for coockicutter setup
+- [Chatgpt] for Code debugging and documentation 
 ---
 
 ## Collaborators & Contributions
