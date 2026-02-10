@@ -42,7 +42,7 @@ PROJECT STRUCTURE:
 QUICK START:
 ------------
 
-    # Import what you need
+    # Import what is needed
     from rl_capstone.environments import WindyChasmEnv
     from rl_capstone.agents import DPAgent, Trainer
     

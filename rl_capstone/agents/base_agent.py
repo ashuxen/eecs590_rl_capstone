@@ -35,15 +35,15 @@ class BaseAgent(ABC):
     """
     Abstract base class for all RL agents.
     
-    METHODS YOU MUST IMPLEMENT (in subclasses):
+    METHODS WE MUST IMPLEMENT (in subclasses):
     -------------------------------------------
     - select_action(state): Choose action given state
     - train(): Learn policy/value function
     - save(path): Save agent to file
     - load(path): Load agent from file
     
-    METHODS PROVIDED (already implemented):
-    ---------------------------------------
+    METHODS I ALREADY COMPLETED (already implemented):
+    --------------------------------------------------
     - evaluate_episode(): Run one episode and return results
     - get_value_function(): Return V if available
     - get_policy(): Return π if available

@@ -17,10 +17,10 @@ This is the foundation of MODEL-BASED REINFORCEMENT LEARNING:
 REAL WORLD EXAMPLE:
 -------------------
 Imagine learning to ride a bike:
-- You don't know physics equations for balance
-- You try actions and observe what happens
-- Your brain builds a model: "if I lean left, bike goes left"
-- You use this model to plan your next move
+- We don't know physics equations for balance
+- We try actions and observe what happens
+- Our brain builds a model: "if I lean left, bike goes left"
+- We use this model to plan our next move
 
 THIS CLASS DOES THE SAME THING:
 - Observe: (current_state, action) -> (reward, next_state)
@@ -307,7 +307,7 @@ class BeliefMDP:
 
 
 # =============================================================================
-# EXAMPLE: Learning a simple environment
+# An simple example of Learning a simple environment
 # =============================================================================
 """
 # Create a belief MDP for a 5-state, 2-action environment

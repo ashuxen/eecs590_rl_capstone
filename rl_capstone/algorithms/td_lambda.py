@@ -2,7 +2,7 @@
 Temporal Difference Learning: TD(λ)
 ===================================
 
-Requirement 4: "For environments without sufficiently simple subtasks, you can trade
+Requirement 4: "For environments without sufficiently simple subtasks, as per V1 details we can trade
 this requirement out for backward view TD(lambda) + greedy improvements on expected values."
 
 TD methods learn from experience without requiring a model:

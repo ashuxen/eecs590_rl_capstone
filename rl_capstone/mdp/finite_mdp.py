@@ -282,7 +282,7 @@ class FiniteMDP:
 
 
 # =============================================================================
-# EXAMPLE USAGE (uncomment to test)
+# VERY SIMPLE EXAMPLE USAGE (we cam uncomment if needed to test)
 # =============================================================================
 """
 # Create a simple 3-state MDP

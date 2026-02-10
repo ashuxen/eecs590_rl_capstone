@@ -307,9 +307,9 @@ def policy_iteration(P_a: Dict[Any, Union[np.ndarray, sp.csr_matrix]],
     return V, pi, max_iter
 
 
-# =============================================================================
-# Q-VALUE VERSION OF POLICY EVALUATION (for completeness)
-# =============================================================================
+# ===================================================================================================================
+# Q-VALUE VERSION OF POLICY EVALUATION (for completeness i am keeping here but I have separate Q value algo file too)
+# ===================================================================================================================
 
 def q_policy_evaluation(pi: Dict[int, Any],
                         P_a: Dict[Any, Union[np.ndarray, sp.csr_matrix]],

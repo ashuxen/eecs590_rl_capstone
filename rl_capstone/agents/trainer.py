@@ -5,23 +5,23 @@ TRAINER - Manages Training, Evaluation, and Saving
 
 WHY THIS FILE IS IMPORTANT:
 ---------------------------
-The Trainer is the "coach" of your RL system. It:
+The Trainer is the "coach" of our RL system here. It:
 1. Orchestrates training (calls agent.train())
 2. Runs evaluation episodes to test performance
 3. Saves the best policy for later use
 4. Keeps track of results and history
 
-This is your main interface for running experiments!
+This is my main interface for running experiments for the capstone project as well!
 
 TYPICAL WORKFLOW:
 -----------------
-    env = WindyChasmEnv(B=0.5)
+    env = WindyChasmEnv(B=0.5) -> Will chnage to cable insertion when ready using ur5e
     agent = DPAgent(env)
     trainer = Trainer(agent, env)
     
     trainer.train()                    # Learn optimal policy
     trainer.evaluate(num_episodes=100) # Test it
-    trainer.save("models/best.pkl")    # Save for later
+    trainer.save("models/best.pkl")    # .pkl file Saves for later
 
 ============================================================================
 """
@@ -41,7 +41,7 @@ class EvaluationResult:
     """
     Stores results from evaluating an agent.
     
-    This is like a report card for your agent!
+    This is like a report card for my agent!
     
     Attributes:
         success_rate: Fraction of episodes that reached the goal
@@ -176,7 +176,7 @@ class Trainer:
         Args:
             num_episodes: How many episodes to run
             max_steps: Safety limit per episode
-            verbose: Print progress?
+            verbose: Print progress
             
         Returns:
             result: EvaluationResult with all statistics

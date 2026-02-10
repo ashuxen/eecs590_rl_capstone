@@ -6,7 +6,7 @@ VALUE ITERATION - The Classic Dynamic Programming Algorithm
 WHY THIS FILE IS IMPORTANT:
 ---------------------------
 Value Iteration is one of the two fundamental algorithms for solving MDPs
-(the other is Policy Iteration). If you understand this, you understand
+(the other is Policy Iteration). If we understand this, we understand
 the core of Dynamic Programming in RL!
 
 THE BIG IDEA:
@@ -32,8 +32,8 @@ V*(s) = max_a [ R(s) + γ * Σ P(s'|s,a) * V*(s') ]
         |      Immediate reward
         Best action (we pick the maximum)
 
-IN PLAIN ENGLISH:
------------------
+A simple explanation:
+---------------------
 "The value of a state equals the immediate reward plus the 
 discounted value of where we expect to end up, assuming we
 pick the best possible action."
