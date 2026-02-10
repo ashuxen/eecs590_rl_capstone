@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-02-09T23:20:15.908402",
+  "environment": {
+    "name": "WindyChasm",
+    "B": 0.3,
+    "gamma": 0.99,
+    "R_goal": 20.0,
+    "r_crash": 5.0,
+    "n_states": 142,
+    "n_actions": 3
+  },
+  "training": {
+    "method": "value_iteration",
+    "iterations": 2591,
+    "v_start": 905.1084805817806,
+    "v_mean": 970.3531720365837
+  },
+  "evaluation": {
+    "num_episodes": 100,
+    "success_rate": 0.65,
+    "crash_rate": 0.35,
+    "mean_reward": -13.71,
+    "std_reward": 10.297859000782639,
+    "mean_steps": 25.96
+  },
+  "files": {
+    "model": "C:\\Users\\ashutokumar\\OneDrive - NVIDIA Corporation\\Documents\\EECS_590_RL\\eecs590_rl_capstone\\models\\policy_kernel\\windy_chasm_B0.3.pkl"
+  }
+}

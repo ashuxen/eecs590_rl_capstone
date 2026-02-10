@@ -1,0 +1,32 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "rl_capstone"
+version = "0.0.1"
+description = "EECS 590 Reinforcement Learning Capstone - Sim-to-Real Robotic Manipulation"
+authors = [
+  { name = "Ashutosh Kumar" },
+]
+
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    
+]
+requires-python = "~=3.11.0"
+
+
+[tool.ruff]
+line-length = 99
+src = ["rl_capstone"]
+include = ["pyproject.toml", "rl_capstone/**/*.py"]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # Add import sorting
+
+[tool.ruff.lint.isort]
+known-first-party = ["rl_capstone"]
+force-sort-within-sections = true
+

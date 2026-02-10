@@ -1,0 +1,2 @@
+# Policy kernels (best policy + value function pairs) are stored here
+# Run: python -m rl_capstone.agents.trainer --save models/policy_kernel/v1.pkl
