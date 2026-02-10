@@ -35,6 +35,18 @@ A discrete MDP where a drone navigates through a windy chasm:
 - **Reward R**: step=-1, goal=+20, crash=-5
 - **Discount γ**: 0.99
 
+### Capstone Environment: UR5e Cable Insertion (AI for Industry Challenge)
+
+A continuous robotic manipulation task for the **Intrinsic AI for Industry Challenge**:
+- **Robot**: Universal Robots UR5e (6-DOF arm)
+- **Gripper**: Robotiq Hand-E (parallel jaw)
+- **Sensor**: ATI Axia80 Force-Torque sensor
+- **Vision**: Three wrist-mounted Basler cameras
+- **Task**: Cable insertion into server rack ports
+- **Challenge**: [AI for Industry Challenge](https://discourse.openrobotics.org/t/ai-for-industry-challenge-challenge-details/52380)
+
+> **Note**: This is a preliminary environment setup. The official participant toolkit will be available March 2, 2026.
+
 ---
 
 ## Project Organization
@@ -48,16 +60,26 @@ A discrete MDP where a drone navigates through a windy chasm:
 │
 ├── models/            <- [REQ 5] Trained models and policy kernels
 │   └── policy_kernel/ <- Best policy + value function pairs
+│       ├── windy_chasm_B0.3.pkl    <- Trained agent (B=0.3)
+│       └── windy_chasm_B0.3_summary.json
 │
 ├── notebooks/         <- Jupyter notebooks for experiments
 │   ├── 01_mini1_mrp_analysis.ipynb
 │   ├── 02_mini2_mdp_analysis.ipynb
 │   └── 03_v1_experiments.ipynb
 │
+├── scenes/            <- Isaac Sim USD scenes
+│   ├── ur5e_cable_insertion_scene.usd  <- UR5e robot setup
+│   └── windy_chasm_scene.usd           <- Windy Chasm visualization
+│
 ├── references/        <- Course materials, papers
 │
 ├── reports/           <- Generated analysis and figures
 │   └── figures/
+│
+├── train_and_save.py       <- Script to train and save agent
+├── load_and_use_agent.py   <- Script to load and use trained agent
+├── load_ur5e_scene.py      <- Script to load UR5e Isaac Sim scene
 │
 └── rl_capstone/       <- Source code
     ├── __init__.py
@@ -84,7 +106,8 @@ A discrete MDP where a drone navigates through a windy chasm:
     │
     ├── environments/  <- Custom environments
     │   ├── __init__.py
-    │   └── windy_chasm.py     <- Mini 2 environment
+    │   ├── windy_chasm.py           <- Mini 2 environment
+    │   └── ur5e_cable_insertion.py  <- AI for Industry Challenge env
     │
     └── visualization/ <- Isaac Sim visualization
         └── windy_chasm_interactive.py
@@ -137,8 +160,78 @@ python -m rl_capstone.agents.trainer --evaluate --load models/policy_kernel/v1.p
 ### Isaac Sim Visualization
 
 ```powershell
+# Windy Chasm Interactive Demo
 C:\isaacsim\IsaacLab\_isaac_sim\python.bat rl_capstone\visualization\windy_chasm_interactive.py
+
+# Load saved Windy Chasm scene
+C:\isaacsim\IsaacLab\_isaac_sim\python.bat load_ur5e_scene.py
 ```
+
+---
+
+## Isaac Sim Scenes
+
+Pre-built USD scenes are available in the `scenes/` folder:
+
+| Scene | Description | File |
+|-------|-------------|------|
+| Windy Chasm | 3D visualization of Mini 2 MDP with wind indicators | `windy_chasm_scene.usd` |
+| UR5e Cable Insertion | Preliminary setup for AI for Industry Challenge | `ur5e_cable_insertion_scene.usd` |
+
+### Loading Scenes
+
+```powershell
+# Load UR5e scene
+C:\isaacsim\IsaacLab\_isaac_sim\python.bat load_ur5e_scene.py
+```
+
+Or manually in Isaac Sim: **File > Open > scenes/ur5e_cable_insertion_scene.usd**
+
+---
+
+## AI for Industry Challenge (Capstone)
+
+### Challenge Overview
+
+The [Intrinsic AI for Industry Challenge](https://discourse.openrobotics.org/t/ai-for-industry-challenge-challenge-details/52380) focuses on robotic cable manipulation tasks in industrial settings.
+
+### Hardware Stack
+
+| Component | Model | Specifications |
+|-----------|-------|----------------|
+| **Robot Arm** | Universal Robots UR5e | 6-DOF, 5kg payload, ±0.03mm repeatability |
+| **Gripper** | Robotiq Hand-E | Parallel jaw, 50mm stroke, 130N grip force |
+| **F/T Sensor** | ATI Axia80 | 6-axis, 80mm OD, EtherCAT interface |
+| **Cameras** | Basler (x3) | Wrist-mounted, stereo vision |
+
+### Preliminary Environment
+
+The `ur5e_cable_insertion.py` provides a Gymnasium-style interface:
+
+```python
+from rl_capstone.environments import UR5eCableInsertionEnv
+
+# Create environment
+env = UR5eCableInsertionEnv(control_mode="joint_velocity")
+
+# Reset and step
+obs, info = env.reset()
+action = env.action_space.sample()
+obs, reward, terminated, truncated, info = env.step(action)
+```
+
+### Observation Space (Preliminary)
+- Joint positions (6D)
+- Joint velocities (6D)
+- End-effector pose (7D - position + quaternion)
+- Force-torque readings (6D)
+- Gripper state (1D)
+
+### Action Space (Preliminary)
+- Joint velocities (6D) or
+- End-effector delta pose (6D)
+
+> **Timeline**: Official toolkit available March 2, 2026. Current implementation is for preliminary testing.
 
 ---
 
@@ -250,13 +343,25 @@ trainer.load("models/policy_kernel/best_v1.pkl")
 
 ## What I Built in V1
 
+### Core RL Framework
 1. ✅ **Cookiecutter project structure** following data science best practices
 2. ✅ **MDP Framework** with belief updating for model-based RL
 3. ✅ **Value Iteration** on both V and Q values
 4. ✅ **Policy Iteration** with policy evaluation and improvement
 5. ✅ **TD(λ)** as alternative to DP methods
 6. ✅ **Agent Framework** with train/evaluate/save capabilities
-7. ✅ **Isaac Sim Visualization** for interactive demonstration
+7. ✅ **Trained Agent** saved at `models/policy_kernel/windy_chasm_B0.3.pkl`
+
+### Isaac Sim Integration
+8. ✅ **Windy Chasm Visualization** - Interactive 3D scene with UI controls
+9. ✅ **UR5e Cable Insertion Scene** - Preliminary setup for AI for Industry Challenge
+10. ✅ **USD Scene Files** - Reusable scenes in `scenes/` folder
+11. ✅ **Scene Loading Scripts** - `load_ur5e_scene.py` for testing
+
+### AI for Industry Challenge Preparation
+12. ✅ **UR5e Environment** - Gymnasium-style interface in `ur5e_cable_insertion.py`
+13. ✅ **Hardware Configs** - Robot, gripper, sensor specifications as dataclasses
+14. ✅ **Isaac Sim Assets** - Correct CDN paths for UR5e model
 
 ---
 
@@ -265,16 +370,24 @@ trainer.load("models/policy_kernel/best_v1.pkl")
 1. **Scalability**: Tabular methods limited to small state spaces
 2. **Sim-to-Real Gap**: Physics differences between simulation and reality
 3. **Cable Modeling**: Deformable objects require advanced techniques
+4. **Challenge Timeline**: Official toolkit not available until March 2, 2026
 
 ---
 
 ## Next Steps (V2)
 
+### RL Algorithms
 1. [ ] Implement function approximation (DQN/PPO)
-2. [ ] Train robot reaching task in Isaac Lab
+2. [ ] Implement model-based planning with learned beliefs
 3. [ ] Add domain randomization for robustness
-4. [ ] Register for Intrinsic AI Challenge
-5. [ ] Implement model-based planning with learned beliefs
+
+### AI for Industry Challenge
+4. [x] Register for Intrinsic AI Challenge
+5. [ ] Integrate official participant toolkit (March 2, 2026)
+6. [ ] Implement cable physics (deformable body simulation)
+7. [ ] Train UR5e reaching task in Isaac Lab
+8. [ ] Add force-torque based insertion policy
+9. [ ] Implement vision-based cable detection
 
 ---
 
@@ -286,12 +399,20 @@ trainer.load("models/policy_kernel/best_v1.pkl")
 - Puterman, M. L. (1994). *Markov Decision Processes*. Wiley.
 
 ### Software & Tools
-- NVIDIA Isaac Sim: https://developer.nvidia.com/isaac-sim
+- NVIDIA Isaac Sim 5.1: https://developer.nvidia.com/isaac-sim
+- NVIDIA Isaac Lab: https://isaac-sim.github.io/IsaacLab/
 - Cookiecutter Data Science v2: https://cookiecutter-data-science.drivendata.org/
   - Template: https://github.com/drivendataorg/cookiecutter-data-science
   - See [references/COOKIECUTTER_TEMPLATE.md](references/COOKIECUTTER_TEMPLATE.md) for full details
 - NumPy: https://numpy.org/
 - SciPy: https://scipy.org/
+- Gymnasium: https://gymnasium.farama.org/
+
+### AI for Industry Challenge
+- Challenge Details: https://discourse.openrobotics.org/t/ai-for-industry-challenge-challenge-details/52380
+- Universal Robots UR5e: https://www.universal-robots.com/products/ur5-robot/
+- Robotiq Hand-E: https://robotiq.com/products/hand-e-adaptive-robot-gripper
+- ATI Axia80: https://www.ati-ia.com/products/ft/ft_models.aspx?id=Axia80
 
 ### Course Materials
 - EECS 590 Lecture Slides (Dr. Alexander Lowenstein)
