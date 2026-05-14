@@ -1,4 +1,9 @@
 site_name: EECS 590 RL Capstone
-# 
 site_author: Ashutosh Kumar
-# 
+nav:
+  - Home: docs/index.md
+  - Final Decisions V3: docs/final-decisions-v3.md
+  - Isaac Sim PPO Training: docs/isaac-sim-ppo-training.md
+  - Gazebo Evaluation: docs/gazebo-evaluation.md
+  - Technical Challenges: docs/technical-challenges.md
+  - Functional Readiness: docs/functional-readiness.md

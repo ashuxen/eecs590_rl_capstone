@@ -4,6 +4,9 @@
 # Mac OS-specific storage files
 .DS_Store
 
+# Windows endpoint/security sidecar files copied with images
+*:sec.endpointdlp
+
 # vim
 *.swp
 *.swo

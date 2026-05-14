@@ -1,46 +1,25 @@
 # EECS 590 RL Capstone Documentation
 
-## Description
+This documentation is the final V3 record for my reinforcement learning capstone. The project combines a course RL framework with a robotics capstone for impedance-aware cable insertion.
 
-EECS 590 Reinforcement Learning Capstone - Sim-to-Real Robotic Manipulation for the [AI for Industry Challenge](https://discourse.openrobotics.org/t/ai-for-industry-challenge-challenge-details/52380).
+## Read These First
 
-## V1 — Foundation RL
+- `final-decisions-v3.md` explains what I implemented, what I chose not to implement, and why.
+- `isaac-sim-ppo-training.md` summarizes the Windows Isaac Sim / Isaac Lab PPO training work, including the recurrent GRU belief/memory experiment.
+- `gazebo-evaluation.md` summarizes WSL/Gazebo scoring evidence.
+- `technical-challenges.md` records failures, debugging lessons, and remaining risks.
+- `functional-readiness.md` records the lightweight checks run for V3 and the external simulator requirements.
 
-- Windy Chasm MDP environment with Value Iteration, Policy Iteration, TD(λ)
-- Agent framework with train/evaluate/save
-- Isaac Sim visualization scenes
-- See `rl_capstone/mdp/`, `rl_capstone/algorithms/`, `rl_capstone/agents/`
+## Project Areas
 
-## V2 — AIC Competition (Deep RL)
+- `rl_capstone/mdp/`: finite MDP and belief MDP utilities.
+- `rl_capstone/algorithms/`: value iteration, Q-value iteration, policy iteration, and TD(lambda).
+- `rl_capstone/agents/`: training/evaluation wrapper for the tabular RL work.
+- `rl_capstone/environments/`: Windy Chasm and UR5e environment interfaces.
+- `rl_capstone/aic_competition/`: perception, PPO/residual policy, phase belief tracking, and policy code for the cable insertion task.
+- `reports/`: compact evidence artifacts from Isaac training and Gazebo evaluation.
 
-All competition code lives in [`rl_capstone/aic_competition/`](../../rl_capstone/aic_competition/).
+## Final Status
 
-| Module | What It Does |
-|--------|-------------|
-| [`policy/SmartInsert.py`](../../rl_capstone/aic_competition/policy/SmartInsert.py) | Main insertion policy — PPO + DAgger hybrid with impedance control (2800+ lines) |
-| [`perception/train_port_2d_v4.py`](../../rl_capstone/aic_competition/perception/train_port_2d_v4.py) | CNN training — ResNet-18 + FPN + FiLM for port detection |
-| [`training/ppo_residual.py`](../../rl_capstone/aic_competition/training/ppo_residual.py) | PPO actor-critic with DAgger fallback |
-| [`training/dagger_loop.py`](../../rl_capstone/aic_competition/training/dagger_loop.py) | DAgger expert data collection |
-| [`training/residual_mlp.py`](../../rl_capstone/aic_competition/training/residual_mlp.py) | Shared MLP architecture for residual policy |
-| [`phase_estimation/phase_belief.py`](../../rl_capstone/aic_competition/phase_estimation/phase_belief.py) | Gaussian HMM for Bayesian contact-phase tracking |
-| [`phase_estimation/fit_phase_hmm.py`](../../rl_capstone/aic_competition/phase_estimation/fit_phase_hmm.py) | Fit HMM parameters from collected episodes |
+The repository is intended to be a reproducible record of the capstone work. The lightweight Python components can be checked locally. Full robot evaluation requires the AIC simulator workspace and, for Isaac PPO training, the external Windows Isaac Lab installation.
 
-## Model Checkpoints
-
-Trained weights are in `models/checkpoints/`:
-
-- `perception/port_2d_v4.pt` — CNN port detector (ResNet-18 + FPN)
-- `ppo/ppo_actor.pt`, `ppo_critic.pt`, `residual_mlp.pt` — PPO policy
-- `dagger/residual_mlp.pt` — DAgger expert baseline
-- `hmm/phase_hmm_params.npz` — Fitted HMM parameters
-
-## Training Images
-
-Sample camera views from data collection are in [`rl_capstone/aic_competition/images/`](../../rl_capstone/aic_competition/images/) — showing SFP and SC insertion phases (start, approach, near, descent, hold).
-
-## Other Docs
-
-- [Getting Started](getting-started.md)
-- [Technical Challenges](technical-challenges.md) — bugs, surprises, and lessons learned
-- [Environment & Hardware](../../rl_capstone/aic_competition/docs/environment.md) — competition setup, observation/action space
-- [Competition Status](../../rl_capstone/aic_competition/docs/status.md) — progress, scores, known issues

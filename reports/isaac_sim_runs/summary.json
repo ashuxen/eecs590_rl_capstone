@@ -1,0 +1,130 @@
+{
+  "V9 scratch PPO": {
+    "Train/mean_reward": {
+      "last_step": 119,
+      "last": -8.441069602966309,
+      "best": -8.004185676574707,
+      "best_step": 111
+    },
+    "Metrics/ee_pose/insertion_depth": {
+      "last_step": 119,
+      "last": 0.007177997380495071,
+      "best": 0.019114740192890167,
+      "best_step": 1
+    },
+    "Episode_Reward/tier2": {
+      "last_step": 119,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Episode_Reward/tier3": {
+      "last_step": 119,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Metrics/ee_pose/orientation_error": {
+      "last_step": 119,
+      "last": 2.967526435852051,
+      "best": 3.0726592540740967,
+      "best_step": 3
+    }
+  },
+  "V10 no lateral term": {
+    "Train/mean_reward": {
+      "last_step": 388,
+      "last": -74.49391174316406,
+      "best": -38.88895797729492,
+      "best_step": 244
+    },
+    "Metrics/ee_pose/insertion_depth": {
+      "last_step": 388,
+      "last": -0.403522789478302,
+      "best": 0.06053897738456726,
+      "best_step": 5
+    },
+    "Episode_Reward/tier2": {
+      "last_step": 388,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Episode_Reward/tier3": {
+      "last_step": 388,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Metrics/ee_pose/orientation_error": {
+      "last_step": 388,
+      "last": 2.063239097595215,
+      "best": 3.139641523361206,
+      "best_step": 102
+    }
+  },
+  "V11 strong approach": {
+    "Train/mean_reward": {
+      "last_step": 623,
+      "last": 68.60433197021484,
+      "best": 69.86772155761719,
+      "best_step": 614
+    },
+    "Metrics/ee_pose/insertion_depth": {
+      "last_step": 623,
+      "last": -0.03472762182354927,
+      "best": 0.06364014744758606,
+      "best_step": 48
+    },
+    "Episode_Reward/tier2": {
+      "last_step": 623,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Episode_Reward/tier3": {
+      "last_step": 623,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 0
+    },
+    "Metrics/ee_pose/orientation_error": {
+      "last_step": 623,
+      "last": 3.0217175483703613,
+      "best": 3.1016414165496826,
+      "best_step": 78
+    }
+  },
+  "V12 close insertion": {
+    "Train/mean_reward": {
+      "last_step": 2149,
+      "last": 631.6704711914062,
+      "best": 676.0415649414062,
+      "best_step": 2147
+    },
+    "Metrics/ee_pose/insertion_depth": {
+      "last_step": 2150,
+      "last": 0.056360092014074326,
+      "best": 0.0635838434100151,
+      "best_step": 510
+    },
+    "Episode_Reward/tier2": {
+      "last_step": 2150,
+      "last": 0.0,
+      "best": 0.5185185670852661,
+      "best_step": 769
+    },
+    "Episode_Reward/tier3": {
+      "last_step": 2151,
+      "last": 0.0,
+      "best": 0.0,
+      "best_step": 500
+    },
+    "Metrics/ee_pose/orientation_error": {
+      "last_step": 2152,
+      "last": 3.0741806030273438,
+      "best": 3.1070363521575928,
+      "best_step": 1760
+    }
+  }
+}

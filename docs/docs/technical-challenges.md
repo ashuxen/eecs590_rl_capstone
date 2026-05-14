@@ -1,33 +1,59 @@
-# Technical Challenges & Surprises
+# Technical Challenges and Lessons
 
-Issues I ran into while building the AIC competition system.
+This file records the main issues I hit while developing the capstone: what worked, what failed, and why I changed direction.
 
----
+## 1. Ground Truth Data Did Not Transfer Cleanly
 
-## 1. SC Connector Won't Insert
+I collected Gazebo data with ground truth enabled and used it for behavior cloning and DAgger-style warm starts. The problem was that initial positions and randomization distributions did not match Isaac training closely enough. PPO warm-started from these demonstrations inherited the wrong bias and failed early.
 
-The SC port needs way more depth than SFP (-0.045m vs -0.025m). I spent a full night collecting PPO data and got zero successful SC insertions. The reward function was also wrong for SC — it was using TCP-to-port distance which collapsed too early and gave no useful learning signal. Had to redesign the reward with connector-specific depth targets and force-based shaping.
+Lesson: demonstrations are only helpful when their state distribution overlaps the deployment or training distribution.
 
-## 2. Robot Thinks It's Done Too Early
+## 2. PPO Reward Hacking
 
-During evaluation without ground truth, the robot declared "seated" at only 10mm depth and stopped pushing. Score was 19 instead of 75+. The rule-based phase classifier used fixed force thresholds that don't work when forces are low. I replaced it with a Gaussian HMM that tracks belief over 5 contact phases using Bayesian updates, plus a depth gate so it can't declare seated unless it's deep enough.
+Early PPO runs learned to exploit termination behavior instead of inserting the cable. In V9, lateral-excursion termination became an easy way to end episodes without learning useful approach or seating behavior.
 
-## 3. Zombie Middleware Processes
+Fix: remove or soften termination paths that reward the wrong behavior, then add positive shaping for real progress.
 
-ROS 2 Zenoh middleware keeps running after Gazebo shuts down. The next training run fails silently because ports are taken. I had to write a cleanup script that kills everything before each run. Took me a while to figure out why training was hanging.
+## 3. Hover and Pre-Entrance Stall
 
-## 4. Installed Package vs Source Code
+After removing the lateral-excursion exploit, the agent could still hover or stall before meaningful insertion. It needed a reward term that specifically encouraged progress toward the port face before the actual seating phase.
 
-After editing SmartInsert.py, the robot kept running old code. Turns out the package manager caches the installed version and doesn't pick up source file edits. Had to manually copy files to the installed location every time I made changes.
+Fix: V11 added pre-entrance depth progress and stronger approach shaping.
 
-## 5. CNN Training Died Silently
+## 4. Strict Seating Was Still Hard
 
-Kicked off 300 epochs of CNN training overnight, came back and it only ran 10. No error in the log — Python was buffering output and the process got killed quietly. Had to rerun with unbuffered output so I could actually see what happened.
+V12 improved close-range reward shaping, but strict Tier 3 seating did not become reliable. The policy learned useful approach and some depth behavior, but the blind contact-search phase remained difficult.
 
-## 6. Zero Episodes After Code Change
+Lesson: full end-to-end PPO was too broad for the deadline. A narrower contact-start problem is a better next step.
 
-Added a retry mechanism for failed insertions, but it was too aggressive — kept retracting when it didn't need to and wasted all the time. Every trial timed out. Had to tune when retries actually trigger vs when the robot should just keep pushing.
+## 5. Perception Generalization Was a Deployment Bottleneck
 
-## 7. Camera Drift During Approach
+The Gazebo heuristic originally used fixed world axes during lateral search. This failed when the NIC card and board were randomized. The fix was to build the search frame from detected NIC geometry instead of global axes.
 
-As the gripper gets closer to the port, CNN predictions drift 2-3mm because the viewpoint changes a lot. I added exponential moving average fusion where later vision updates get less weight. Still not perfect at very close range where the port starts leaving the camera's view.
+Lesson: policy logic can still fail if its coordinate frame is wrong.
+
+## 6. Contact Search Can Deflect the Cable
+
+When search radius was too large, the cable could bend off the NIC face and push into air. That produced poor insertion behavior and risked force penalties.
+
+Fix: bound the search to the NIC card face, keep raster/spiral motions small, and use force-aware axial push.
+
+## 7. Force Penalties Matter
+
+The scoring rules penalize excessive force. Local logs showed that high peak force could be tolerated briefly, but sustained force above threshold caused penalties. This made impedance tuning and contact dwell logic central to the project.
+
+Lesson: the reward and final heuristic both need to reflect safety and scoring rules, not just final pose.
+
+## 8. Repository Readiness Is Different From Competition Readiness
+
+The full AIC workspace, Docker image, Isaac Lab installation, and raw training logs live outside this repository. For V3, this repository keeps a compact record:
+
+- algorithm code,
+- policy code snapshots,
+- training summaries,
+- scoring evidence,
+- final decisions,
+- known limitations.
+
+Large generated artifacts are not committed unless they are needed to review the work.
+

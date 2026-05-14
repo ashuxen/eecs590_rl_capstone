@@ -1,0 +1,616 @@
+--- git status ---
+Not currently on any branch.
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    scripts/reinforcement_learning/rsl_rl/play.py
+	deleted:    scripts/reinforcement_learning/rsl_rl/train.py
+	modified:   source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	2
+	2.7.0+cu128
+	Ctrl+C
+	USD
+	aic/
+	env
+	pivot
+	source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py.warnings
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/scripts/reinforcement_learning/rsl_rl/play.py b/scripts/reinforcement_learning/rsl_rl/play.py
+deleted file mode 100644
+index beb920721..000000000
+--- a/scripts/reinforcement_learning/rsl_rl/play.py
++++ /dev/null
+@@ -1,210 +0,0 @@
+-# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+-# All rights reserved.
+-#
+-# SPDX-License-Identifier: BSD-3-Clause
+-
+-"""Script to play a checkpoint if an RL agent from RSL-RL."""
+-
+-"""Launch Isaac Sim Simulator first."""
+-
+-import argparse
+-import sys
+-
+-from isaaclab.app import AppLauncher
+-
+-# local imports
+-import cli_args  # isort: skip
+-
+-# add argparse arguments
+-parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+-parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
+-parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
+-parser.add_argument(
+-    "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
+-)
+-parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
+-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+-parser.add_argument(
+-    "--agent", type=str, default="rsl_rl_cfg_entry_point", help="Name of the RL agent configuration entry point."
+-)
+-parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+-parser.add_argument(
+-    "--use_pretrained_checkpoint",
+-    action="store_true",
+-    help="Use the pre-trained checkpoint from Nucleus.",
+-)
+-parser.add_argument("--real-time", action="store_true", default=False, help="Run in real-time, if possible.")
+-# append RSL-RL cli arguments
+-cli_args.add_rsl_rl_args(parser)
+-# append AppLauncher cli args
+-AppLauncher.add_app_launcher_args(parser)
+-# parse the arguments
+-args_cli, hydra_args = parser.parse_known_args()
+-# always enable cameras to record video
+-if args_cli.video:
+-    args_cli.enable_cameras = True
+-
+-# clear out sys.argv for Hydra
+-sys.argv = [sys.argv[0]] + hydra_args
+-
+-# launch omniverse app
+-app_launcher = AppLauncher(args_cli)
+-simulation_app = app_launcher.app
+-
+-"""Rest everything follows."""
+-
+-import os
+-import time
+-
+-import gymnasium as gym
+-import torch
+-from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+-
+-from isaaclab.envs import (
+-    DirectMARLEnv,
+-    DirectMARLEnvCfg,
+-    DirectRLEnvCfg,
+-    ManagerBasedRLEnvCfg,
+-    multi_agent_to_single_agent,
+-)
+-from isaaclab.utils.assets import retrieve_file_path
+-from isaaclab.utils.dict import print_dict
+-
+-from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit, export_policy_as_onnx
+-from isaaclab_rl.utils.pretrained_checkpoint import get_published_pretrained_checkpoint
+-
+-import isaaclab_tasks  # noqa: F401
+-from isaaclab_tasks.utils import get_checkpoint_path
+-from isaaclab_tasks.utils.hydra import hydra_task_config
+-
+-# PLACEHOLDER: Extension template (do not remove this comment)
+-
+-
+-@hydra_task_config(args_cli.task, args_cli.agent)
+-def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
+-    """Play with RSL-RL agent."""
+-    # grab task name for checkpoint path
+-    task_name = args_cli.task.split(":")[-1]
+-    train_task_name = task_name.replace("-Play", "")
+-
+-    # override configurations with non-hydra CLI arguments
+-    agent_cfg: RslRlBaseRunnerCfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
+-    env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
+-
+-    # set the environment seed
+-    # note: certain randomizations occur in the environment initialization so we set the seed here
+-    env_cfg.seed = agent_cfg.seed
+-    env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+-
+-    # specify directory for logging experiments
+-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+-    log_root_path = os.path.abspath(log_root_path)
+-    print(f"[INFO] Loading experiment from directory: {log_root_path}")
+-    if args_cli.use_pretrained_checkpoint:
+-        resume_path = get_published_pretrained_checkpoint("rsl_rl", train_task_name)
+-        if not resume_path:
+-            print("[INFO] Unfortunately a pre-trained checkpoint is currently unavailable for this task.")
+-            return
+-    elif args_cli.checkpoint:
+-        resume_path = retrieve_file_path(args_cli.checkpoint)
+-    else:
+-        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+-
+-    log_dir = os.path.dirname(resume_path)
+-
+-    # set the log directory for the environment (works for all environment types)
+-    env_cfg.log_dir = log_dir
+-
+-    # create isaac environment
+-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+-
+-    # convert to single-agent instance if required by the RL algorithm
+-    if isinstance(env.unwrapped, DirectMARLEnv):
+-        env = multi_agent_to_single_agent(env)
+-
+-    # wrap for video recording
+-    if args_cli.video:
+-        video_kwargs = {
+-            "video_folder": os.path.join(log_dir, "videos", "play"),
+-            "step_trigger": lambda step: step == 0,
+-            "video_length": args_cli.video_length,
+-            "disable_logger": True,
+-        }
+-        print("[INFO] Recording videos during training.")
+-        print_dict(video_kwargs, nesting=4)
+-        env = gym.wrappers.RecordVideo(env, **video_kwargs)
+-
+-    # wrap around environment for rsl-rl
+-    env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+-
+-    print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+-    # load previously trained model
+-    if agent_cfg.class_name == "OnPolicyRunner":
+-        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+-    elif agent_cfg.class_name == "DistillationRunner":
+-        runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=None, device=agent_cfg.device)
+-    else:
+-        raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
+-    runner.load(resume_path)
+-
+-    # obtain the trained policy for inference
+-    policy = runner.get_inference_policy(device=env.unwrapped.device)
+-
+-    # extract the neural network module
+-    # we do this in a try-except to maintain backwards compatibility.
+-    try:
+-        # version 2.3 onwards
+-        policy_nn = runner.alg.policy
+-    except AttributeError:
+-        # version 2.2 and below
+-        policy_nn = runner.alg.actor_critic
+-
+-    # extract the normalizer
+-    if hasattr(policy_nn, "actor_obs_normalizer"):
+-        normalizer = policy_nn.actor_obs_normalizer
+-    elif hasattr(policy_nn, "student_obs_normalizer"):
+-        normalizer = policy_nn.student_obs_normalizer
+-    else:
+-        normalizer = None
+-
+-    # export policy to onnx/jit
+-    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+-    export_policy_as_jit(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.pt")
+-    export_policy_as_onnx(policy_nn, normalizer=normalizer, path=export_model_dir, filename="policy.onnx")
+-
+-    dt = env.unwrapped.step_dt
+-
+-    # reset environment
+-    obs = env.get_observations()
+-    timestep = 0
+-    # simulate environment
+-    while simulation_app.is_running():
+-        start_time = time.time()
+-        # run everything in inference mode
+-        with torch.inference_mode():
+-            # agent stepping
+-            actions = policy(obs)
+-            # env stepping
+-            obs, _, dones, _ = env.step(actions)
+-            # reset recurrent states for episodes that have terminated
+-            policy_nn.reset(dones)
+-        if args_cli.video:
+-            timestep += 1
+-            # Exit the play loop after recording one video
+-            if timestep == args_cli.video_length:
+-                break
+-
+-        # time delay for real-time evaluation
+-        sleep_time = dt - (time.time() - start_time)
+-        if args_cli.real_time and sleep_time > 0:
+-            time.sleep(sleep_time)
+-
+-    # close the simulator
+-    env.close()
+-
+-
+-if __name__ == "__main__":
+-    # run the main function
+-    main()
+-    # close sim app
+-    simulation_app.close()
+diff --git a/scripts/reinforcement_learning/rsl_rl/train.py b/scripts/reinforcement_learning/rsl_rl/train.py
+deleted file mode 100644
+index 0cce12d7e..000000000
+--- a/scripts/reinforcement_learning/rsl_rl/train.py
++++ /dev/null
+@@ -1,229 +0,0 @@
+-# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+-# All rights reserved.
+-#
+-# SPDX-License-Identifier: BSD-3-Clause
+-
+-"""Script to train RL agent with RSL-RL."""
+-
+-"""Launch Isaac Sim Simulator first."""
+-
+-import argparse
+-import sys
+-
+-from isaaclab.app import AppLauncher
+-
+-# local imports
+-import cli_args  # isort: skip
+-
+-# add argparse arguments
+-parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
+-parser.add_argument("--video", action="store_true", default=False, help="Record videos during training.")
+-parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
+-parser.add_argument("--video_interval", type=int, default=2000, help="Interval between video recordings (in steps).")
+-parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
+-parser.add_argument("--task", type=str, default=None, help="Name of the task.")
+-parser.add_argument(
+-    "--agent", type=str, default="rsl_rl_cfg_entry_point", help="Name of the RL agent configuration entry point."
+-)
+-parser.add_argument("--seed", type=int, default=None, help="Seed used for the environment")
+-parser.add_argument("--max_iterations", type=int, default=None, help="RL Policy training iterations.")
+-parser.add_argument(
+-    "--distributed", action="store_true", default=False, help="Run training with multiple GPUs or nodes."
+-)
+-parser.add_argument("--export_io_descriptors", action="store_true", default=False, help="Export IO descriptors.")
+-parser.add_argument(
+-    "--ray-proc-id", "-rid", type=int, default=None, help="Automatically configured by Ray integration, otherwise None."
+-)
+-# append RSL-RL cli arguments
+-cli_args.add_rsl_rl_args(parser)
+-# append AppLauncher cli args
+-AppLauncher.add_app_launcher_args(parser)
+-args_cli, hydra_args = parser.parse_known_args()
+-
+-# always enable cameras to record video
+-if args_cli.video:
+-    args_cli.enable_cameras = True
+-
+-# clear out sys.argv for Hydra
+-sys.argv = [sys.argv[0]] + hydra_args
+-
+-# launch omniverse app
+-app_launcher = AppLauncher(args_cli)
+-simulation_app = app_launcher.app
+-
+-"""Check for minimum supported RSL-RL version."""
+-
+-import importlib.metadata as metadata
+-import platform
+-
+-from packaging import version
+-
+-# check minimum supported rsl-rl version
+-RSL_RL_VERSION = "3.0.1"
+-installed_version = metadata.version("rsl-rl-lib")
+-if version.parse(installed_version) < version.parse(RSL_RL_VERSION):
+-    if platform.system() == "Windows":
+-        cmd = [r".\isaaclab.bat", "-p", "-m", "pip", "install", f"rsl-rl-lib=={RSL_RL_VERSION}"]
+-    else:
+-        cmd = ["./isaaclab.sh", "-p", "-m", "pip", "install", f"rsl-rl-lib=={RSL_RL_VERSION}"]
+-    print(
+-        f"Please install the correct version of RSL-RL.\nExisting version is: '{installed_version}'"
+-        f" and required version is: '{RSL_RL_VERSION}'.\nTo install the correct version, run:"
+-        f"\n\n\t{' '.join(cmd)}\n"
+-    )
+-    exit(1)
+-
+-"""Rest everything follows."""
+-
+-import logging
+-import os
+-import time
+-from datetime import datetime
+-
+-import gymnasium as gym
+-import torch
+-from rsl_rl.runners import DistillationRunner, OnPolicyRunner
+-
+-from isaaclab.envs import (
+-    DirectMARLEnv,
+-    DirectMARLEnvCfg,
+-    DirectRLEnvCfg,
+-    ManagerBasedRLEnvCfg,
+-    multi_agent_to_single_agent,
+-)
+-from isaaclab.utils.dict import print_dict
+-from isaaclab.utils.io import dump_yaml
+-
+-from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
+-
+-import isaaclab_tasks  # noqa: F401
+-from isaaclab_tasks.utils import get_checkpoint_path
+-from isaaclab_tasks.utils.hydra import hydra_task_config
+-
+-# import logger
+-logger = logging.getLogger(__name__)
+-
+-# PLACEHOLDER: Extension template (do not remove this comment)
+-
+-torch.backends.cuda.matmul.allow_tf32 = True
+-torch.backends.cudnn.allow_tf32 = True
+-torch.backends.cudnn.deterministic = False
+-torch.backends.cudnn.benchmark = False
+-
+-
+-@hydra_task_config(args_cli.task, args_cli.agent)
+-def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
+-    """Train with RSL-RL agent."""
+-    # override configurations with non-hydra CLI arguments
+-    agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
+-    env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
+-    agent_cfg.max_iterations = (
+-        args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
+-    )
+-
+-    # set the environment seed
+-    # note: certain randomizations occur in the environment initialization so we set the seed here
+-    env_cfg.seed = agent_cfg.seed
+-    env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
+-    # check for invalid combination of CPU device with distributed training
+-    if args_cli.distributed and args_cli.device is not None and "cpu" in args_cli.device:
+-        raise ValueError(
+-            "Distributed training is not supported when using CPU device. "
+-            "Please use GPU device (e.g., --device cuda) for distributed training."
+-        )
+-
+-    # multi-gpu training configuration
+-    if args_cli.distributed:
+-        env_cfg.sim.device = f"cuda:{app_launcher.local_rank}"
+-        agent_cfg.device = f"cuda:{app_launcher.local_rank}"
+-
+-        # set seed to have diversity in different threads
+-        seed = agent_cfg.seed + app_launcher.local_rank
+-        env_cfg.seed = seed
+-        agent_cfg.seed = seed
+-
+-    # specify directory for logging experiments
+-    log_root_path = os.path.join("logs", "rsl_rl", agent_cfg.experiment_name)
+-    log_root_path = os.path.abspath(log_root_path)
+-    print(f"[INFO] Logging experiment in directory: {log_root_path}")
+-    # specify directory for logging runs: {time-stamp}_{run_name}
+-    log_dir = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+-    # The Ray Tune workflow extracts experiment name using the logging line below, hence, do not
+-    # change it (see PR #2346, comment-2819298849)
+-    print(f"Exact experiment name requested from command line: {log_dir}")
+-    if agent_cfg.run_name:
+-        log_dir += f"_{agent_cfg.run_name}"
+-    log_dir = os.path.join(log_root_path, log_dir)
+-
+-    # set the IO descriptors export flag if requested
+-    if isinstance(env_cfg, ManagerBasedRLEnvCfg):
+-        env_cfg.export_io_descriptors = args_cli.export_io_descriptors
+-    else:
+-        logger.warning(
+-            "IO descriptors are only supported for manager based RL environments. No IO descriptors will be exported."
+-        )
+-
+-    # set the log directory for the environment (works for all environment types)
+-    env_cfg.log_dir = log_dir
+-
+-    # create isaac environment
+-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+-
+-    # convert to single-agent instance if required by the RL algorithm
+-    if isinstance(env.unwrapped, DirectMARLEnv):
+-        env = multi_agent_to_single_agent(env)
+-
+-    # save resume path before creating a new log_dir
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
+-        resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
+-
+-    # wrap for video recording
+-    if args_cli.video:
+-        video_kwargs = {
+-            "video_folder": os.path.join(log_dir, "videos", "train"),
+-            "step_trigger": lambda step: step % args_cli.video_interval == 0,
+-            "video_length": args_cli.video_length,
+-            "disable_logger": True,
+-        }
+-        print("[INFO] Recording videos during training.")
+-        print_dict(video_kwargs, nesting=4)
+-        env = gym.wrappers.RecordVideo(env, **video_kwargs)
+-
+-    start_time = time.time()
+-
+-    # wrap around environment for rsl-rl
+-    env = RslRlVecEnvWrapper(env, clip_actions=agent_cfg.clip_actions)
+-
+-    # create runner from rsl-rl
+-    if agent_cfg.class_name == "OnPolicyRunner":
+-        runner = OnPolicyRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+-    elif agent_cfg.class_name == "DistillationRunner":
+-        runner = DistillationRunner(env, agent_cfg.to_dict(), log_dir=log_dir, device=agent_cfg.device)
+-    else:
+-        raise ValueError(f"Unsupported runner class: {agent_cfg.class_name}")
+-    # write git state to logs
+-    runner.add_git_repo_to_log(__file__)
+-    # load the checkpoint
+-    if agent_cfg.resume or agent_cfg.algorithm.class_name == "Distillation":
+-        print(f"[INFO]: Loading model checkpoint from: {resume_path}")
+-        # load previously trained model
+-        runner.load(resume_path)
+-
+-    # dump the configuration into log-directory
+-    dump_yaml(os.path.join(log_dir, "params", "env.yaml"), env_cfg)
+-    dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), agent_cfg)
+-
+-    # run training
+-    runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)
+-
+-    print(f"Training time: {round(time.time() - start_time, 2)} seconds")
+-
+-    # close the simulator
+-    env.close()
+-
+-
+-if __name__ == "__main__":
+-    # run the main function
+-    main()
+-    # close sim app
+-    simulation_app.close()
+diff --git a/source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py b/source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py
+index 46aeead2f..5fdf50840 100644
+--- a/source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py
++++ b/source/isaaclab/isaaclab/utils/datasets/hdf5_dataset_file_handler.py
+@@ -1,9 +1,4 @@
+-# Copyright (c) 2022-2026, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+-# All rights reserved.
+-#
+-# SPDX-License-Identifier: BSD-3-Clause
+-
+-# Copyright (c) 2024-2025, The Isaac Lab Project Developers.
++# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+ # All rights reserved.
+ #
+ # SPDX-License-Identifier: BSD-3-Clause
+@@ -12,13 +7,36 @@ import json
+ import os
+ from collections.abc import Iterable
+ 
+-import h5py
+ import numpy as np
+ import torch
+ 
+ from .dataset_file_handler_base import DatasetFileHandlerBase
+ from .episode_data import EpisodeData
+ 
++# Lazy-loaded h5py: the conda environment's HDF5 native DLL may be broken or
++# missing, which would normally make this module fail to import (and break the
++# entire isaaclab.managers / isaaclab.envs import chain via recorder_manager).
++# We only need h5py when actually reading/writing HDF5 dataset files, so defer
++# the import until first use. PPO/RL training never touches this code path.
++h5py = None
++
++
++def _lazy_h5py():
++    """Import h5py on first use; raise a clear error if the native DLL is broken."""
++    global h5py
++    if h5py is None:
++        try:
++            import h5py as _h5py
++        except ImportError as e:
++            raise ImportError(
++                "h5py is required to read/write HDF5 dataset files but failed to import. "
++                "This usually means the native HDF5 library DLL is missing or mismatched in your "
++                "Python environment. Reinstall h5py (e.g. `pip install --force-reinstall h5py`) "
++                f"to fix it. Original error: {e}"
++            ) from e
++        h5py = _h5py
++    return h5py
++
+ 
+ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+     """HDF5 dataset file handler for storing and loading episode data."""
+@@ -32,14 +50,16 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+ 
+     def open(self, file_path: str, mode: str = "r"):
+         """Open an existing dataset file."""
++        h5 = _lazy_h5py()
+         if self._hdf5_file_stream is not None:
+             raise RuntimeError("HDF5 dataset file stream is already in use")
+-        self._hdf5_file_stream = h5py.File(file_path, mode)
++        self._hdf5_file_stream = h5.File(file_path, mode)
+         self._hdf5_data_group = self._hdf5_file_stream["data"]
+         self._demo_count = len(self._hdf5_data_group)
+ 
+     def create(self, file_path: str, env_name: str = None):
+         """Create a new dataset file."""
++        h5 = _lazy_h5py()
+         if self._hdf5_file_stream is not None:
+             raise RuntimeError("HDF5 dataset file stream is already in use")
+         if not file_path.endswith(".hdf5"):
+@@ -47,7 +67,7 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+         dir_path = os.path.dirname(file_path)
+         if not os.path.isdir(dir_path):
+             os.makedirs(dir_path)
+-        self._hdf5_file_stream = h5py.File(file_path, "w")
++        self._hdf5_file_stream = h5.File(file_path, "w")
+ 
+         # set up a data group in the file
+         self._hdf5_data_group = self._hdf5_file_stream.create_group("data")
+@@ -108,6 +128,7 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+     def load_episode(self, episode_name: str, device: str) -> EpisodeData | None:
+         """Load episode data from the file."""
+         self._raise_if_not_initialized()
++        h5 = _lazy_h5py()
+         if episode_name not in self._hdf5_data_group:
+             return None
+         episode = EpisodeData()
+@@ -117,7 +138,7 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+             """Helper method to load dataset that contains recursive dict objects."""
+             data = {}
+             for key in group:
+-                if isinstance(group[key], h5py.Group):
++                if isinstance(group[key], h5.Group):
+                     data[key] = load_dataset_helper(group[key])
+                 else:
+                     # Converting group[key] to numpy array greatly improves the performance
+@@ -137,27 +158,18 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+ 
+         return episode
+ 
+-    def write_episode(self, episode: EpisodeData, demo_id: int | None = None):
++    def write_episode(self, episode: EpisodeData):
+         """Add an episode to the dataset.
+ 
+         Args:
+             episode: The episode data to add.
+-            demo_id: Custom index for the episode. If None, uses default index.
+         """
+         self._raise_if_not_initialized()
+         if episode.is_empty():
+             return
+ 
+-        # Use custom demo id if provided, otherwise use default naming
+-        if demo_id is not None:
+-            episode_group_name = f"demo_{demo_id}"
+-        else:
+-            episode_group_name = f"demo_{self._demo_count}"
+-
+-        # create episode group with the specified name
+-        if episode_group_name in self._hdf5_data_group:
+-            raise ValueError(f"Episode group '{episode_group_name}' already exists in the dataset")
+-        h5_episode_group = self._hdf5_data_group.create_group(episode_group_name)
++        # create episode group based on demo count
++        h5_episode_group = self._hdf5_data_group.create_group(f"demo_{self._demo_count}")
+ 
+         # store number of steps taken
+         if "actions" in episode.data:
+@@ -186,10 +198,8 @@ class HDF5DatasetFileHandler(DatasetFileHandlerBase):
+         # increment total step counts
+         self._hdf5_data_group.attrs["total"] += h5_episode_group.attrs["num_samples"]
+ 
+-        # Only increment demo count if using default indexing
+-        if demo_id is None:
+-            # increment total demo counts
+-            self._demo_count += 1
++        # increment total demo counts
++        self._demo_count += 1
+ 
+     def flush(self):
+         """Flush the episode data to disk."""

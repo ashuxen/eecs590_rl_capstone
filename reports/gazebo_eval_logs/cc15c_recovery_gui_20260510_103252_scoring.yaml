@@ -1,0 +1,79 @@
+total: 38.31735365618205
+trial_1:
+  tier_1:
+    score: 1
+    message: Model validation succeeded.
+  tier_2:
+    score: 10.317353656182048
+    message: Scoring succeeded.
+    categories:
+      contacts:
+        score: 0
+        message: No contact detected.
+      duration:
+        score: 1.3090909090909091
+        message: "Task duration: 54.00 seconds."
+      insertion force:
+        score: 0
+        message: "Insertion force above 20.00 N, detected for a time of 0.06 seconds. Max detected force: 67.19N. This is below the threshold of 1.00 seconds. Penalty not applied."
+      trajectory efficiency:
+        score: 6
+        message: "Total end-effector path length: 0.00 m, initial plug-port distance: 0.13 m"
+      trajectory smoothness:
+        score: 3.0082627470911394
+        message: "Average linear jerk magnitude of the end effector: 24.93 m/s^3"
+  tier_3:
+    score: 25
+    message: "No insertion detected. Final plug port distance: 0.04m."
+trial_2:
+  tier_1:
+    score: 1
+    message: Model validation succeeded.
+  tier_2:
+    score: 0
+    message: Scoring succeeded.
+    categories:
+      contacts:
+        score: 0
+        message: No contact detected.
+      duration:
+        score: 0
+        message: Task not completed.
+      insertion force:
+        score: 0
+        message: "Insertion force above 20.00 N, detected for a time of 0.26 seconds. Max detected force: 36.61N. This is below the threshold of 1.00 seconds. Penalty not applied."
+      trajectory efficiency:
+        score: 0
+        message: Task not completed.
+      trajectory smoothness:
+        score: 0
+        message: Task not completed.
+  tier_3:
+    score: 0
+    message: Task not completed.
+trial_3:
+  tier_1:
+    score: 1
+    message: Model validation succeeded.
+  tier_2:
+    score: 0
+    message: Scoring succeeded.
+    categories:
+      contacts:
+        score: 0
+        message: No contact detected.
+      duration:
+        score: 0
+        message: Task not completed.
+      insertion force:
+        score: 0
+        message: No excessive force detected
+      trajectory efficiency:
+        score: 0
+        message: Task not completed.
+      trajectory smoothness:
+        score: 0
+        message: Task not completed.
+  tier_3:
+    score: 0
+    message: Task not completed.
