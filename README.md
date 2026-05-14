@@ -86,6 +86,7 @@ Full Gazebo evaluation is run from the AIC workspace, not directly from this rep
 - `reports/figures/tensorboard/` contains exported TensorBoard plots from Isaac Lab PPO runs V9-V12.
 - `reports/isaac_sim_runs/` contains compact run metadata: `agent.yaml`, `env.yaml`, and `IsaacLab.diff` for selected PPO runs.
 - `reports/gazebo_eval_logs/` contains copied scoring YAML files from local Gazebo evaluations, including a best local score of about `98.82`.
+- `reports/competition_scoring/` contains selected Gazebo `sim.log` files from local competition-style evaluation runs.
 - `rl_capstone/aic_competition/images/` contains project visuals for the AIC cable insertion work.
 
 Large generated artifacts are intentionally excluded: raw TensorBoard event files, Isaac checkpoints, Gazebo bags, Docker layers, and full rollout datasets.
