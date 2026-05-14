@@ -1,0 +1,27 @@
+{
+  "arch": "DAggerResidualPolicy",
+  "state_dim": 49,
+  "delta_max": 0.002,
+  "ft_history": 5,
+  "hparams": {
+    "epochs": 80,
+    "batch_size": 256,
+    "lr": 0.0003,
+    "weight_decay": 0.0001,
+    "hidden": 256,
+    "port_noise_std": 0.005,
+    "skip_first_n": 10,
+    "val_frac": 0.1,
+    "min_steps_per_episode": 50,
+    "delta_max": 0.002,
+    "success_only": true,
+    "seed": 0,
+    "log_every_n_epochs": 1
+  },
+  "training": {
+    "n_train": 22971,
+    "n_val": 2552,
+    "best_val_loss": 2.7955196667884092e-05,
+    "elapsed_sec": 67.27917003631592
+  }
+}

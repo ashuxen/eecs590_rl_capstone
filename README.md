@@ -88,8 +88,9 @@ Full Gazebo evaluation is run from the AIC workspace, not directly from this rep
 - `reports/gazebo_eval_logs/` contains copied scoring YAML files from local Gazebo evaluations, including a best local score of about `98.82`.
 - `reports/competition_scoring/` contains selected Gazebo `sim.log` files from local competition-style evaluation runs.
 - `rl_capstone/aic_competition/images/` contains project visuals for the AIC cable insertion work.
+- `models/checkpoints/v3_selected/` contains selected model checkpoints from the best/most relevant V3 training runs.
 
-Large generated artifacts are intentionally excluded: raw TensorBoard event files, Isaac checkpoints, Gazebo bags, Docker layers, and full rollout datasets.
+Large generated artifacts are intentionally excluded: raw TensorBoard event files, most intermediate checkpoints, Gazebo bags, Docker layers, and full rollout datasets.
 
 ## Project Visuals
 
